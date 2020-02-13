@@ -27,12 +27,13 @@ class ListView(APIView):
             return JsonResponse(result.serializer())
 
         service_name = request.POST.get('service_name')
-        if not re.match("^[A-Za-z]+(_[0-9]+)?$", service_name):
+        if service_name and not re.match("^[A-Za-z]+(_[0-9]+)?$", service_name):
             result.code = CODE_SYS_TIPS
             result.message = "service_name format error"
             return JsonResponse(result.serializer())
 
-        service_name = service_name.lower()
+        if service_name:
+            service_name = service_name.lower()
         domain = request.POST.get('domain')
         port = request.POST.get('port')
         meta = request.POST.get('meta')
@@ -89,7 +90,7 @@ class ListView(APIView):
     def get(request):
         service_id = request.POST.get('service_id')
         result = Result()
-        if not service_id:
+        if service_id:
             service_dict = cache.get(create_key(CACHE_SERVICE, service_id))
             result.data = service_dict
             return JsonResponse(result.serializer())
@@ -107,7 +108,7 @@ class ListView(APIView):
     def put(request):
         result = Result()
         service_name = request.POST.get('service_name')
-        if not re.match("^[A-Za-z]+(_[0-9]+)?$", service_name):
+        if not service_name or not re.match("^[A-Za-z]+(_[0-9]+)?$", service_name):
             result.code = CODE_SYS_TIPS
             result.message = "service_name format error"
             return JsonResponse(result.serializer())
