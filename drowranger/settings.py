@@ -105,6 +105,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# 设置全局认证
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ['services.utils.auth.Authentication', ],  # 里面写你的认证的类的路径
+}
+
 # redis在django中的配置
 CACHES = {
     "default": {

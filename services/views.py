@@ -1,4 +1,5 @@
 import logging
+import re
 
 from django.core.cache import cache
 from django.db import transaction
@@ -6,7 +7,7 @@ from django.http import JsonResponse
 from rest_framework.views import APIView
 
 from drowranger.utils import encrypt
-from drowranger.utils.cache import create_key, CACHE_SERVICE
+from drowranger.utils.cache import create_key, CACHE_SERVICE, CACHE_SERVICE_NAME
 from drowranger.utils.errors import CODE_SYS_DB_ERROR, get_error_message, CODE_SYS_TIPS
 from drowranger.utils.result import Result
 from services.models import Service
@@ -26,6 +27,12 @@ class ListView(APIView):
             return JsonResponse(result.serializer())
 
         service_name = request.POST.get('service_name')
+        if not re.match("^[A-Za-z]+(_[0-9]+)?$", service_name):
+            result.code = CODE_SYS_TIPS
+            result.message = "service_name format error"
+            return JsonResponse(result.serializer())
+
+        service_name = service_name.lower()
         domain = request.POST.get('domain')
         port = request.POST.get('port')
         meta = request.POST.get('meta')
@@ -59,6 +66,7 @@ class ListView(APIView):
         language = request.POST.get('language')
         language = language if not language else 'EN'
 
+        result = Result()
         try:
             with transaction.atomic():
                 count = Service.objects.filter(id=service_id).update(service_name=service.service_name,
@@ -68,13 +76,13 @@ class ListView(APIView):
 
                 service_dict = ServiceSerializer(service).data
                 cache.set(create_key(CACHE_SERVICE, service.id), service_dict, timeout=None)
+                cache.set(create_key(CACHE_SERVICE_NAME, service_name), service_dict, timeout=None)
+                result.data = count
         except Exception as e:
             log.error(e)
             result.code = CODE_SYS_DB_ERROR
             result.message = get_error_message(result.code, language)
 
-        result = Result()
-        result.data = count
         return JsonResponse(result.serializer())
 
     @staticmethod
@@ -97,7 +105,15 @@ class ListView(APIView):
 
     @staticmethod
     def put(request):
+        result = Result()
         service_name = request.POST.get('service_name')
+        if not re.match("^[A-Za-z]+(_[0-9]+)?$", service_name):
+            result.code = CODE_SYS_TIPS
+            result.message = "service_name format error"
+            return JsonResponse(result.serializer())
+
+        service_name = service_name.lower()
+
         domain = request.POST.get('domain')
         port = request.POST.get('port')
         meta = request.POST.get('meta')
@@ -109,7 +125,6 @@ class ListView(APIView):
         secret = encrypt.digest_random()
         secret = encrypt.digest(secret)
 
-        result = Result()
         try:
             with transaction.atomic():
                 service = Service(service_name=service_name, domain=domain, port=port, meta=meta, secret=secret,
@@ -118,12 +133,13 @@ class ListView(APIView):
 
                 service_dict = ServiceSerializer(service).data
                 cache.set(create_key(CACHE_SERVICE, service.id), service_dict, timeout=None)
+                cache.set(create_key(CACHE_SERVICE_NAME, service_name), service_dict, timeout=None)
+                result.data = service_dict
         except Exception as e:
             log.error(e)
             result.code = CODE_SYS_DB_ERROR
             result.message = get_error_message(result.code, language)
 
-        result.data = service_dict
         return JsonResponse(result.serializer())
 
     @staticmethod
@@ -137,6 +153,8 @@ class ListView(APIView):
             with transaction.atomic():
                 Service.objects.filter(id=service_id).delete()
 
+                service_dict = cache.get(create_key(CACHE_SERVICE, service_id))
+                cache.delete(create_key(CACHE_SERVICE_NAME, service_dict['service_name']))
                 cache.delete(create_key(CACHE_SERVICE, service_id))
         except Exception as e:
             log.error(e)
