@@ -17,3 +17,6 @@ class Service(models.Model):
     status = models.IntegerField(choices=STATUS_TYPE)
     create_time = models.BigIntegerField(default=int(round(time.time() * 1000)))
     update_time = models.BigIntegerField(default=int(round(time.time() * 1000)))
+
+    class Meta:
+        unique_together = ('domain', 'port',)

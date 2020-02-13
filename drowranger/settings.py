@@ -115,7 +115,7 @@ CACHES = {
             # 压缩支持
             "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
             # 配置默认连接池
-            "CONNECTION_POOL_KWARGS": {"max_connections": 100},
+            "CONNECTION_POOL_KWARGS": {"max_connections": 2},
             # json 序列化,默认是使用pickle直接将对象存入redis,改用json
             "SERIALIZER": "django_redis.serializers.json.JSONSerializer",
             "PASSWORD": "test123",
