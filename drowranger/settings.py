@@ -15,7 +15,6 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
@@ -25,8 +24,7 @@ SECRET_KEY = 'r+z^3okboexg@ec_m1o#d3zcj%4hb2)p60%mz5mpvd)l_v(t%2'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -37,6 +35,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'services',
 ]
 
 MIDDLEWARE = [
@@ -69,18 +69,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'drowranger.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
-
-
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
@@ -99,7 +87,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
@@ -113,8 +100,109 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# redis在django中的配置
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://192.168.0.105:6379/0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # 压缩支持
+            "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+            # 配置默认连接池
+            "CONNECTION_POOL_KWARGS": {"max_connections": 100},
+            # json 序列化,默认是使用pickle直接将对象存入redis,改用json
+            "SERIALIZER": "django_redis.serializers.json.JSONSerializer",
+            "PASSWORD": "test123",
+        }
+    }
+}
+
+# Database
+# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'OPTIONS': {'init_command': 'SET default_storage_engine=INNODB;'},
+        'NAME': 'drowranger',
+        'USER': 'root',
+        'PASSWORD': '123456',
+        'HOST': '192.168.0.105',
+        'PORT': '3306',
+    },
+}
+
+# logs
+# EMAIL_HOST = 'smtp.qq.com'
+# EMAIL_PORT = 25
+# EMAIL_HOST_USER = 'sender@gmail.com'  # 发件箱
+# EMAIL_HOST_PASSWORD = 'xxxxx'  # 开启POP3/SMTP服务
+# SERVER_EMAIL = 'sender@gmail.com'  # 与发件箱一致
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# ADMINS = [('John', 'John@gmail.com'), ('Peter', 'Peter@gmail.com')]
+
+# LOGGING_DIR 日志文件存放目录
+LOGGING_DIR = "logs"  # 日志存放路径
+if not os.path.exists(LOGGING_DIR):
+    os.mkdir(LOGGING_DIR)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {  # 格式化器
+        'standard': {
+            'format': '[%(levelname)s][%(asctime)s][%(filename)s][%(funcName)s][%(lineno)d] > %(message)s'
+        },
+        'simple': {
+            'format': '[%(levelname)s]> %(message)s'
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file_handler': {
+            'level': 'INFO',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': '%s/info.log' % LOGGING_DIR,  # 具体日志文件的名字
+            'formatter': 'standard'
+        },  # 用于文件输出
+        # 'mail_admins': {
+        #     'level': 'ERROR',
+        #     'class': 'django.utils.log.AdminEmailHandler',
+        #     'formatter': 'standard'
+        # },
+    },
+    'loggers': {  # 日志分配到哪个handlers中
+        'mydjango': {
+            'handlers': ['console', 'file_handler'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        # 'django.request': {
+        #     'handlers': ['mail_admins'],
+        #     'level': 'ERROR',
+        #     'propagate': False,
+        # },
+        # 如果要将get,post请求同样写入到日志文件中，则这个触发器的名字必须交django,然后写到handler中
+        'django': {
+            'handlers': ['console', 'file_handler'],
+            'level': 'INFO',
+            'propagate': False
+        }
+    }
+}
