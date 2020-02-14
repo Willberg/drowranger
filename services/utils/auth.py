@@ -2,8 +2,9 @@ from django.core.cache import cache
 from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication
 
-from drowranger.utils.cache import create_key, CACHE_SERVICE_NAME
+from drowranger.utils.cache import create_key, CACHE_SERVICE_NAME, CACHE_SERVICE
 from services.models import Service
+from services.serializers import ServiceSerializer
 
 
 class Authentication(BaseAuthentication):
@@ -18,14 +19,18 @@ class Authentication(BaseAuthentication):
 
         service_dict = cache.get(create_key(CACHE_SERVICE_NAME, service_name))
         if not service_dict:
+            service = Service.objects.filter(service_name=service_name).first()
+            if not service:
+                raise exceptions.AuthenticationFailed('找不到服务')
+
+            service_dict = ServiceSerializer(service).data
+            cache.set(create_key(CACHE_SERVICE, service_dict['id']), service_dict)
+            cache.set(create_key(CACHE_SERVICE_NAME, service_name), service_dict)
+
+        if service_dict['secret'] != secret:
             raise exceptions.AuthenticationFailed('找不到服务')
 
-        service = Service()
-        service.__dict__ = service_dict
-        if service.secret != secret:
-            raise exceptions.AuthenticationFailed('找不到服务')
-
-        return service, None
+        return service_dict, None
 
     def authenticate_header(self, request):
         pass

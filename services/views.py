@@ -36,6 +36,7 @@ class ListView(APIView):
             service_name = service_name.lower()
         domain = request.POST.get('domain')
         port = request.POST.get('port')
+        service_uri = request.POST.get('service_uri')
         meta = request.POST.get('meta')
         status = request.POST.get('status')
 
@@ -52,6 +53,9 @@ class ListView(APIView):
         elif port and service.port != int(port):
             update_flag += 1
             service.port = port
+        elif service_uri and service.service_uri != service_uri:
+            update_flag += 1
+            service.service_uri = service_uri
         elif meta and service.meta != meta:
             update_flag += 1
             service.meta = meta
@@ -72,8 +76,8 @@ class ListView(APIView):
             with transaction.atomic():
                 count = Service.objects.filter(id=service_id).update(service_name=service.service_name,
                                                                      domain=service.domain,
-                                                                     port=service.port, meta=service.meta,
-                                                                     status=service.status)
+                                                                     port=service.port, service_uri=service_uri,
+                                                                     meta=service.meta, status=service.status)
 
                 service_dict = ServiceSerializer(service).data
                 cache.set(create_key(CACHE_SERVICE, service.id), service_dict, timeout=None)
@@ -117,6 +121,7 @@ class ListView(APIView):
 
         domain = request.POST.get('domain')
         port = request.POST.get('port')
+        service_uri = request.POST.get('service_uri')
         meta = request.POST.get('meta')
         status = request.POST.get('status')
         language = request.POST.get('language')
@@ -128,8 +133,8 @@ class ListView(APIView):
 
         try:
             with transaction.atomic():
-                service = Service(service_name=service_name, domain=domain, port=port, meta=meta, secret=secret,
-                                  status=status)
+                service = Service(service_name=service_name, domain=domain, port=port, service_uri=service_uri,
+                                  meta=meta, secret=secret, status=status)
                 service.save()
 
                 service_dict = ServiceSerializer(service).data

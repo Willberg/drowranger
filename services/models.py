@@ -12,6 +12,7 @@ class Service(models.Model):
     service_name = models.CharField(max_length=128, unique=True)
     domain = models.CharField(max_length=128)
     port = models.IntegerField()
+    service_uri = models.CharField(max_length=128)
     meta = models.CharField(max_length=512)
     secret = models.CharField(max_length=64)
     status = models.IntegerField(choices=STATUS_TYPE)
