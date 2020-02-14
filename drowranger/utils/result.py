@@ -16,7 +16,7 @@ class Result(object):
         res = dict()
         for k in self.__slots__:
             v = self.__getattribute__(k)
-            if v:
+            if v or k == "_status":
                 k = k[1:]
                 res[k] = v
 

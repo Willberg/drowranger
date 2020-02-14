@@ -76,7 +76,7 @@ class ListView(APIView):
             with transaction.atomic():
                 count = Service.objects.filter(id=service_id).update(service_name=service.service_name,
                                                                      domain=service.domain,
-                                                                     port=service.port, service_uri=service_uri,
+                                                                     port=service.port, service_uri=service.service_uri,
                                                                      meta=service.meta, status=service.status)
 
                 service_dict = ServiceSerializer(service).data
