@@ -92,20 +92,31 @@ class ListView(APIView):
 
     @staticmethod
     def get(request):
-        service_id = request.POST.get('service_id')
         result = Result()
+        service_id = request.POST.get('service_id')
         if service_id:
             service_dict = cache.get(create_key(CACHE_SERVICE, service_id))
             result.data = service_dict
             return JsonResponse(result.serializer())
 
-        service_list = Service.objects.all()
-        service_dict_list = list()
-        for service in service_list:
-            s = ServiceSerializer(service).data
-            service_dict_list.append(s)
+        service_name = request.POST.get('service_name')
+        if service_name:
+            service_dict = cache.get(create_key(CACHE_SERVICE_NAME, service_name))
+            result.data = service_dict
+            return JsonResponse(result.serializer())
 
-        result.data = service_dict_list
+        service_list = Service.objects.all()
+        service_dicts = dict()
+        for service in service_list:
+            service_dict = ServiceSerializer(service).data
+            service_dict_cache = cache.get(create_key(CACHE_SERVICE, service.id))
+            if not service_dict_cache:
+                cache.set(create_key(CACHE_SERVICE, service.id), service_dict, timeout=None)
+                cache.set(create_key(CACHE_SERVICE_NAME, service_name), service_dict, timeout=None)
+
+            service_dicts[service.service_name] = service_dict
+
+        result.data = service_dicts
         return JsonResponse(result.serializer())
 
     @staticmethod
