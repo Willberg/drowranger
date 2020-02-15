@@ -211,3 +211,7 @@ LOGGING = {
         }
     }
 }
+
+# drowranger设置
+DROWRANGER_SERIVCE_NAME = 'drowranger_0001'
+DROWRANGER_SERVICE_SECRET = '90cea09b4cf234a146a232a8e356e507'

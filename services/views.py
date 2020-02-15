@@ -109,10 +109,13 @@ class ListView(APIView):
         service_dicts = dict()
         for service in service_list:
             service_dict = ServiceSerializer(service).data
-            service_dict_cache = cache.get(create_key(CACHE_SERVICE, service.id))
-            if not service_dict_cache:
+            service_dict_cache_by_id = cache.get(create_key(CACHE_SERVICE, service.id))
+            if not service_dict_cache_by_id:
                 cache.set(create_key(CACHE_SERVICE, service.id), service_dict, timeout=None)
-                cache.set(create_key(CACHE_SERVICE_NAME, service_name), service_dict, timeout=None)
+
+            service_dict_cache_by_name = cache.get(create_key(CACHE_SERVICE_NAME, service.service_name))
+            if not service_dict_cache_by_name:
+                cache.set(create_key(CACHE_SERVICE_NAME, service.service_name), service_dict, timeout=None)
 
             service_dicts[service.service_name] = service_dict
 

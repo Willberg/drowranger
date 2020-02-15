@@ -1,10 +1,7 @@
-from django.core.cache import cache
 from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication
 
-from drowranger.utils.cache import create_key, CACHE_SERVICE_NAME, CACHE_SERVICE
-from services.models import Service
-from services.serializers import ServiceSerializer
+from drowranger.settings import DROWRANGER_SERIVCE_NAME, DROWRANGER_SERVICE_SECRET
 
 
 class Authentication(BaseAuthentication):
@@ -17,18 +14,13 @@ class Authentication(BaseAuthentication):
         if not service_name or not secret:
             raise exceptions.AuthenticationFailed('找不到服务')
 
-        service_dict = cache.get(create_key(CACHE_SERVICE_NAME, service_name))
-        if not service_dict:
-            service = Service.objects.filter(service_name=service_name).first()
-            if not service:
-                raise exceptions.AuthenticationFailed('找不到服务')
-
-            service_dict = ServiceSerializer(service).data
-            cache.set(create_key(CACHE_SERVICE, service_dict['id']), service_dict)
-            cache.set(create_key(CACHE_SERVICE_NAME, service_name), service_dict)
-
-        if service_dict['secret'] != secret:
+        if service_name != DROWRANGER_SERIVCE_NAME or secret != DROWRANGER_SERVICE_SECRET:
             raise exceptions.AuthenticationFailed('找不到服务')
+
+        service_dict = {
+            "service_name": service_name,
+            "secret": secret
+        }
 
         return service_dict, None
 
